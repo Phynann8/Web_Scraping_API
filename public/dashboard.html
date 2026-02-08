@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Scraping API Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #171717;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --border: #e5e7eb;
+    }
+    body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 16px; }
+    .label { font-size: 12px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .value { font-size: 26px; font-weight: 700; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    input, select, button { font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
+    button { cursor: pointer; background: var(--accent); color: white; border-color: var(--accent); }
+    button.secondary { background: white; color: var(--text); border-color: var(--border); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 10px 8px; font-size: 13px; vertical-align: top; }
+    .mono { font-family: Consolas, "Courier New", monospace; }
+    .muted { color: var(--muted); }
+    .status-ok { color: #047857; font-weight: 600; }
+    .status-err { color: #b91c1c; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1 style="margin:0">Web Scraping API Dashboard</h1>
+        <div class="muted">Live stats, history, and scheduled jobs</div>
+      </div>
+      <div>
+        <input id="apiKey" type="password" placeholder="x-api-key (if enabled)" />
+        <button class="secondary" onclick="reloadAll()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="grid" id="statsGrid"></div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <h3 style="margin-top:0">Quick Scrape</h3>
+      <div class="toolbar">
+        <select id="quickType">
+          <option value="basic">basic</option>
+          <option value="headlines">headlines</option>
+          <option value="prices">prices</option>
+          <option value="images">images</option>
+          <option value="links">links</option>
+        </select>
+        <input id="quickUrl" style="min-width:320px;flex:1" placeholder="https://example.com" />
+        <button onclick="runQuickScrape()">Run</button>
+      </div>
+      <pre id="quickOut" class="mono" style="white-space: pre-wrap; background:#0b1020; color:#d1d5db; padding:10px; border-radius:8px; max-height:260px; overflow:auto;"></pre>
+    </div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <h3 style="margin-top:0">Recent Records</h3>
+      <div style="overflow:auto; max-height: 340px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>URL</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Schedules</h3>
+      <div class="toolbar">
+        <input id="schName" placeholder="Name" />
+        <select id="schType">
+          <option value="basic">basic</option>
+          <option value="headlines">headlines</option>
+          <option value="prices">prices</option>
+          <option value="images">images</option>
+          <option value="links">links</option>
+        </select>
+        <input id="schUrl" style="min-width:300px;flex:1" placeholder="https://example.com" />
+        <input id="schCron" class="mono" value="*/15 * * * *" />
+        <button onclick="createSchedule()">Add Schedule</button>
+      </div>
+      <div style="overflow:auto; max-height: 300px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Cron</th>
+              <th>Last Run</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function headers() {
+      const key = document.getElementById('apiKey').value.trim();
+      return key ? { 'x-api-key': key, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || body.message || response.statusText);
+      return body;
+    }
+
+    async function loadStats() {
+      const { stats } = await fetchJson('/api/stats');
+      const entries = [
+        ['Total Records', stats.totalRecords],
+        ['Successful', stats.successful],
+        ['Failed', stats.failed],
+        ['Active Schedules', stats.activeSchedules],
+        ['Cache Entries', stats.cacheEntries],
+      ];
+
+      document.getElementById('statsGrid').innerHTML = entries
+        .map(([label, value]) => `<div class="card"><div class="label">${label}</div><div class="value">${value}</div></div>`)
+        .join('');
+    }
+
+    async function loadRecords() {
+      const { records } = await fetchJson('/api/records?limit=100');
+      const body = document.getElementById('recordsBody');
+      body.innerHTML = records
+        .map((r) => `
+          <tr>
+            <td class="mono">${(r.createdAt || '').replace('T', ' ').replace('Z', '')}</td>
+            <td>${r.type || ''}</td>
+            <td class="mono">${r.url || ''}</td>
+            <td class="${r.status === 'success' ? 'status-ok' : 'status-err'}">${r.status || 'unknown'}</td>
+          </tr>
+        `)
+        .join('');
+    }
+
+    async function loadSchedules() {
+      const { schedules } = await fetchJson('/api/schedules');
+      const body = document.getElementById('scheduleBody');
+      body.innerHTML = schedules
+        .map((s) => `
+          <tr>
+            <td>${s.name}</td>
+            <td>${s.type}</td>
+            <td class="mono">${s.cron}</td>
+            <td class="mono">${s.lastRunAt ? s.lastRunAt.replace('T', ' ').replace('Z', '') : '-'}</td>
+            <td class="${s.lastStatus === 'success' ? 'status-ok' : s.lastStatus === 'error' ? 'status-err' : ''}">${s.lastStatus || '-'}</td>
+            <td>
+              <button class="secondary" onclick="runSchedule('${s.id}')">Run</button>
+              <button style="background:#b91c1c;border-color:#b91c1c" onclick="deleteSchedule('${s.id}')">Delete</button>
+            </td>
+          </tr>
+        `)
+        .join('');
+    }
+
+    async function createSchedule() {
+      const payload = {
+        name: document.getElementById('schName').value.trim(),
+        type: document.getElementById('schType').value,
+        url: document.getElementById('schUrl').value.trim(),
+        cron: document.getElementById('schCron').value.trim(),
+      };
+      await fetchJson('/api/schedules', { method: 'POST', body: JSON.stringify(payload) });
+      await loadSchedules();
+      await loadStats();
+    }
+
+    async function runSchedule(id) {
+      await fetchJson(`/api/schedules/${id}/run`, { method: 'POST' });
+      await reloadAll();
+    }
+
+    async function deleteSchedule(id) {
+      await fetchJson(`/api/schedules/${id}`, { method: 'DELETE' });
+      await reloadAll();
+    }
+
+    async function runQuickScrape() {
+      const type = document.getElementById('quickType').value;
+      const url = encodeURIComponent(document.getElementById('quickUrl').value.trim());
+      const out = document.getElementById('quickOut');
+      out.textContent = 'Running...';
+      try {
+        const result = await fetchJson(`/api/scrape/${type === 'basic' ? '' : type}?url=${url}`.replace('/?', '?'));
+        out.textContent = JSON.stringify(result, null, 2);
+        await reloadAll();
+      } catch (error) {
+        out.textContent = error.message;
+      }
+    }
+
+    async function reloadAll() {
+      await Promise.all([loadStats(), loadRecords(), loadSchedules()]);
+    }
+
+    reloadAll().catch((error) => {
+      document.getElementById('quickOut').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

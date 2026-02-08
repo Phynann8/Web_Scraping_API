@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraping API - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-container pre {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .example-btn {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .endpoint-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .endpoint-info strong {
+            color: #856404;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Web Scraping API</h1>
+            <p>Test your scraping API with ease</p>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Test Your API</h2>
+
+            <div class="input-group">
+                <label for="endpoint">Select Endpoint:</label>
+                <select id="endpoint">
+                    <option value="/api/scrape">Basic Scraper - Get title, headings, content</option>
+                    <option value="/api/scrape/headlines">Headlines - Extract all H1, H2, H3</option>
+                    <option value="/api/scrape/prices">Prices - Find prices on the page</option>
+                    <option value="/api/scrape/images">Images - Get all images</option>
+                    <option value="/api/scrape/links">Links - Extract all links</option>
+                </select>
+            </div>
+
+            <div class="endpoint-info" id="endpointInfo">
+                <strong>Basic Scraper:</strong> Extracts title, description, headings, and paragraphs from any webpage.
+            </div>
+
+            <div class="input-group">
+                <label for="url">Enter URL to Scrape:</label>
+                <input type="text" id="url" placeholder="https://example.com" value="https://example.com">
+            </div>
+
+            <button class="btn" onclick="scrapeWebsite()">🔍 Scrape Now</button>
+
+            <div class="examples">
+                <button class="example-btn" onclick="setExample('https://example.com')">
+                    📄 Example.com
+                </button>
+                <button class="example-btn" onclick="setExample('https://news.ycombinator.com')">
+                    📰 Hacker News
+                </button>
+                <button class="example-btn" onclick="setExample('https://github.com')">
+                    💻 GitHub
+                </button>
+                <button class="example-btn" onclick="setExample('https://www.wikipedia.org')">
+                    📚 Wikipedia
+                </button>
+            </div>
+
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+
+        const endpointDescriptions = {
+            '/api/scrape': 'Extracts title, description, headings, and paragraphs from any webpage.',
+            '/api/scrape/headlines': 'Extracts all H1, H2, and H3 headlines from the page.',
+            '/api/scrape/prices': 'Finds and extracts price information from e-commerce pages.',
+            '/api/scrape/images': 'Gets all images with their src, alt, width, and height attributes.',
+            '/api/scrape/links': 'Extracts all links with their text, href, and title attributes.'
+        };
+
+        // Update endpoint info when selection changes
+        document.getElementById('endpoint').addEventListener('change', function () {
+            const endpoint = this.value;
+            const info = endpointDescriptions[endpoint];
+            document.getElementById('endpointInfo').innerHTML =
+                `<strong>${this.options[this.selectedIndex].text.split(' - ')[0]}:</strong> ${info}`;
+        });
+
+        function setExample(url) {
+            document.getElementById('url').value = url;
+        }
+
+        async function scrapeWebsite() {
+            const endpoint = document.getElementById('endpoint').value;
+            const url = document.getElementById('url').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            // Show loading
+            resultDiv.innerHTML = `
+                <div class="result-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Scraping website...</p>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const apiUrl = `${API_BASE}${endpoint}?url=${encodeURIComponent(url)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                // Display result
+                resultDiv.innerHTML = `
+                    <div class="result-container">
+                        <h3>✅ Result:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result-container">
+                        <h3>❌ Error:</h3>
+                        <pre style="color: #fc8181;">${error.message}
+
+⚠️ Make sure your API server is running!
+Run: npm start</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('url').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                scrapeWebsite();
+            }
+        });
+    </script>
+</body>
+
+</html>

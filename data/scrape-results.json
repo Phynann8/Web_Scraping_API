@@ -1,0 +1,25 @@
+{
+  "records": [
+    {
+      "id": "8ab80019-37f0-4b08-b473-fb6cbed610a7",
+      "type": "basic",
+      "url": "https://example.com",
+      "selectors": null,
+      "status": "success",
+      "createdAt": "2026-02-08T15:47:21.790Z",
+      "responseSummary": {
+        "keys": [
+          "url",
+          "title",
+          "description",
+          "headings",
+          "paragraphs",
+          "linkCount",
+          "imageCount",
+          "scrapedAt"
+        ]
+      }
+    }
+  ],
+  "schedules": []
+}
